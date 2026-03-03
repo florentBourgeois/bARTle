@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cards - bARTle</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+            color: #222;
+        }
+
+        h1 {
+            margin-bottom: 16px;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 16px;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 16px;
+        }
+
+        .card-item {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            cursor: pointer;
+            transition: box-shadow 0.2s, background 0.2s;
+        }
+
+        .card-item:hover {
+            background: #f0f7ff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        .card-item.active {
+            background: #d9ecff;
+            border-color: #1976d2;
+            box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+        }
+
+        .card-item h3 {
+            margin: 0 0 8px 0;
+            font-size: 16px;
+        }
+
+        .card-item p {
+            margin: 4px 0;
+            font-size: 14px;
+            color: #666;
+        }
+
+        #boardsContainer {
+            width: 100%;
+        }
+
+        .board-section {
+            margin-bottom: 24px;
+            padding: 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+
+        .board-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .board {
+            width: 100%;
+            max-width: 800px;
+            height: 400px;
+            border: 1px solid #ccc;
+            background: #fff;
+            border-radius: 6px;
+        }
+
+        .card-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .card-list li {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 14px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .card-list li:last-child {
+            border-bottom: none;
+        }
+
+        .card-list li:hover {
+            background: #f0f7ff;
+        }
+
+        .card-list li.active {
+            background: #d9ecff;
+            font-weight: bold;
+        }
+
+        .muted {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .error {
+            color: #b00020;
+            font-weight: bold;
+        }
+
+        .success {
+            color: #087f23;
+            font-weight: bold;
+        }
+
+        .details {
+            background: #f8f8f8;
+            border: 1px solid #e5e5e5;
+            border-radius: 6px;
+            padding: 14px;
+            margin-bottom: 16px;
+        }
+
+        .details pre {
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 8px;
+            overflow: auto;
+            font-size: 12px;
+            margin: 8px 0 0 0;
+        }
+
+        .details p {
+            margin: 6px 0;
+            font-size: 14px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(180px, 1fr));
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .field label {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .field input,
+        .field select,
+        .field button {
+            padding: 8px 10px;
+            border: 1px solid #c9c9c9;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .field button {
+            cursor: pointer;
+            background: #1976d2;
+            color: #fff;
+            border: none;
+            font-weight: 600;
+        }
+
+        .field button:hover {
+            background: #1565c0;
+        }
+
+        .field button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .full-row {
+            grid-column: 1 / -1;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .legend {
+            margin-top: 8px;
+            font-size: 13px;
+            color: #555;
+        }
+
+        .section-divider {
+            border-top: 2px solid #ddd;
+            margin: 24px 0;
+            padding-top: 16px;
+        }
+
+        .cards-overview {
+            margin-bottom: 32px;
+        }
+
+        .card-item svg {
+            width: 100%;
+            height: 150px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-top: 8px;
+            background: #fff;
+        }
+    </style>
+</head>
+<body>
+<h1>Gestion des cartes</h1>
+
+<!-- Section 1 et 2 : Affichage des cartes -->
+<div class="cards-overview">
+    <h2>Aperçu de toutes les cartes</h2>
+    <p class="muted">Chaque carte affiche ses formes graphiquement</p>
+    <div id="cardsContainer" class="card-grid"></div>
+    <p id="cardsStatus" class="muted">Chargement des cartes...</p>
+</div>
+
+<div class="layout">
+    <!-- Section 2 : Liste des cartes résumées -->
+    <div class="card">
+        <h2>Liste des cartes (`/api/cards`)</h2>
+        <ul id="cardList" class="card-list"></ul>
+        <p id="listStatus" class="muted">Chargement de la liste...</p>
+    </div>
+
+    <!-- Section 4 : Formulaire d'ajout de carte -->
+    <div class="card">
+        <h2>Ajouter une carte</h2>
+        <form id="addCardForm">
+            <div class="form-grid">
+                <div class="field full-row">
+                    <button id="addCardBtn" type="submit">Créer une nouvelle carte</button>
+                </div>
+            </div>
+        </form>
+        <p id="addCardStatus" class="muted">Cliquez pour ajouter une nouvelle carte.</p>
+    </div>
+</div>
+
+<!-- Section 3 : Détail de la carte sélectionnée -->
+<div class="card section-divider">
+    <h2>Détail de la carte sélectionnée (`/api/cards/{id}`)</h2>
+    <div id="cardDetail" class="details">
+        <p class="muted">Cliquez sur une carte dans la liste pour afficher ses détails.</p>
+    </div>
+
+    <!-- Section 5 : Formulaire d'ajout de forme dans la carte -->
+    <div id="addShapeToCardSection" class="hidden">
+        <h3>Ajouter une forme dans cette carte</h3>
+        <form id="addShapeToCardForm">
+            <div class="form-grid">
+                <div class="field">
+                    <label for="cardTypeSelect">Type</label>
+                    <select id="cardTypeSelect" name="type" required></select>
+                </div>
+
+                <div class="field">
+                    <label for="cardColorSelect">Couleur</label>
+                    <select id="cardColorSelect" name="color" required></select>
+                </div>
+
+                <div class="field">
+                    <label for="cardLengthInput">Longueur</label>
+                    <input id="cardLengthInput" name="length" type="number" min="1" value="50" required />
+                </div>
+
+                <div class="field" id="cardHeightField">
+                    <label for="cardHeightInput">Hauteur</label>
+                    <input id="cardHeightInput" name="height" type="number" min="0" value="0" required />
+                </div>
+
+                <div class="field full-row">
+                    <button id="addShapeToCardBtn" type="submit">Ajouter la forme à la carte</button>
+                </div>
+            </div>
+        </form>
+        <p id="addShapeStatus" class="muted">Remplissez le formulaire pour ajouter une forme.</p>
+    </div>
+</div>
+
+<script>
+    const BASE = "http://localhost:8080/api";
+    const SHAPE_TYPES = ["CIRCLE", "RECTANGLE", "SQUARE", "TRIANGLE", "HEXAGON", "PENTAGON"];
+    const SHAPE_COLORS = ["RED", "GREEN", "BLUE", "YELLOW", "BLACK", "ORANGE", "PURPLE", "PINK", "BROWN", "GREY"];
+    const TYPES_WITHOUT_HEIGHT = new Set(["CIRCLE", "SQUARE", "HEXAGON", "PENTAGON"]);
+
+    let currentSelectedCardId = null;
+
+    function mapColor(enumColor) {
+        const map = {
+            RED: "#e53935",
+            GREEN: "#43a047",
+            BLUE: "#1e88e5",
+            YELLOW: "#fdd835",
+            BLACK: "#000000",
+            ORANGE: "#fb8c00",
+            PURPLE: "#8e24aa",
+            PINK: "#d81b60",
+            BROWN: "#6d4c41",
+            GREY: "#757575"
+        };
+        return map[enumColor] || "#607d8b";
+    }
+
+    function svgEl(name) {
+        return document.createElementNS("http://www.w3.org/2000/svg", name);
+    }
+
+    function drawShape(svg, shape) {
+        const color = mapColor(shape.color);
+        const x = Number(shape.x ?? 50);
+        const y = Number(shape.y ?? 50);
+        const w = Number(shape.width ?? 20);
+        const h = Number(shape.height ?? 20);
+
+        let el = null;
+
+        switch (shape.type) {
+            case "CIRCLE": {
+                const r = Number(shape.radius ?? Math.max(5, w / 2));
+                el = svgEl("circle");
+                el.setAttribute("cx", String(x));
+                el.setAttribute("cy", String(y));
+                el.setAttribute("r", String(r));
+                break;
+            }
+            case "RECTANGLE":
+            case "SQUARE": {
+                el = svgEl("rect");
+                el.setAttribute("x", String(x));
+                el.setAttribute("y", String(y));
+                el.setAttribute("width", String(w));
+                el.setAttribute("height", String(h));
+                break;
+            }
+            case "TRIANGLE": {
+                const base = Number(shape.base ?? w);
+                const p1 = `${x},${y}`;
+                const p2 = `${x - base / 2},${y + h}`;
+                const p3 = `${x + base / 2},${y + h}`;
+                el = svgEl("polygon");
+                el.setAttribute("points", `${p1} ${p2} ${p3}`);
+                break;
+            }
+            case "HEXAGON": {
+                const r = Math.max(6, w / 2);
+                const pts = [];
+                for (let i = 0; i < 6; i++) {
+                    const a = (Math.PI / 3) * i;
+                    pts.push(`${x + r * Math.cos(a)},${y + r * Math.sin(a)}`);
+                }
+                el = svgEl("polygon");
+                el.setAttribute("points", pts.join(" "));
+                break;
+            }
+            case "PENTAGON": {
+                const r = Math.max(6, w / 2);
+                const pts = [];
+                for (let i = 0; i < 5; i++) {
+                    const a = (Math.PI * 2 / 5) * i - Math.PI / 2;
+                    pts.push(`${x + r * Math.cos(a)},${y + r * Math.sin(a)}`);
+                }
+                el = svgEl("polygon");
+                el.setAttribute("points", pts.join(" "));
+                break;
+            }
+            default:
+                return;
+        }
+
+        el.setAttribute("fill", color);
+        el.setAttribute("stroke", "#333");
+        el.setAttribute("stroke-width", "1.5");
+        svg.appendChild(el);
+    }
+
+    function fillSelect(selectId, values) {
+        const select = document.getElementById(selectId);
+        select.innerHTML = "";
+        values.forEach((value) => {
+            const option = document.createElement("option");
+            option.value = value;
+            option.textContent = value;
+            select.appendChild(option);
+        });
+    }
+
+    function toggleHeightField() {
+        const type = document.getElementById("cardTypeSelect").value;
+        const heightField = document.getElementById("cardHeightField");
+        const heightInput = document.getElementById("cardHeightInput");
+        const hide = TYPES_WITHOUT_HEIGHT.has(type);
+        heightField.classList.toggle("hidden", hide);
+        heightInput.required = !hide;
+        if (hide) {
+            heightInput.value = "0";
+        }
+    }
+
+    // Section 1 : Charger et afficher toutes les cartes avec leurs formes
+    async function loadAllCardsWithDrawings() {
+        const container = document.getElementById("cardsContainer");
+        const status = document.getElementById("cardsStatus");
+        container.innerHTML = "";
+
+        try {
+            const res = await fetch(`${BASE}/cards/detailed`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const cards = await res.json();
+
+            if (!Array.isArray(cards)) {
+                throw new Error("La réponse de /cards/detailed n'est pas une liste.");
+            }
+
+            cards.forEach((card) => {
+                const cardDiv = document.createElement("div");
+                cardDiv.className = "card-item";
+
+                const svg = svgEl("svg");
+                svg.setAttribute("viewBox", "0 0 400 300");
+                svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+
+                // Dessiner toutes les formes de la carte
+                if (card.shapes && Array.isArray(card.shapes)) {
+                    card.shapes.forEach((shape) => {
+                        drawShape(svg, shape);
+                    });
+                }
+
+                const title = document.createElement("h3");
+                title.textContent = `Carte #${card.id}`;
+
+                const nbShapes = document.createElement("p");
+                nbShapes.textContent = `Formes: ${card.shapes ? card.shapes.length : 0}`;
+
+                cardDiv.appendChild(title);
+                cardDiv.appendChild(nbShapes);
+                cardDiv.appendChild(svg);
+
+                // Ajouter un listener pour sélectionner cette carte
+                cardDiv.addEventListener("click", async () => {
+                    await loadCardDetail(card.id);
+                });
+
+                container.appendChild(cardDiv);
+            });
+
+            status.textContent = `${cards.length} carte(s) affichée(s).`;
+            status.className = "muted";
+        } catch (e) {
+            status.textContent = `Erreur chargement des cartes: ${e.message}`;
+            status.className = "error";
+        }
+    }
+
+    // Section 2 : Charger la liste résumée des cartes
+    async function loadCardList() {
+        const list = document.getElementById("cardList");
+        const status = document.getElementById("listStatus");
+        list.innerHTML = "";
+
+        try {
+            const res = await fetch(`${BASE}/cards`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const cards = await res.json();
+
+            if (!Array.isArray(cards)) {
+                throw new Error("La réponse de /cards n'est pas une liste.");
+            }
+
+            cards.forEach((card) => {
+                const li = document.createElement("li");
+                li.dataset.id = String(card.id);
+                li.innerHTML = `<span>Carte #${card.id}</span><span>${card.nbrShapes} formes</span>`;
+                li.addEventListener("click", async () => {
+                    document.querySelectorAll("#cardList li").forEach((el) => el.classList.remove("active"));
+                    li.classList.add("active");
+                    await loadCardDetail(card.id);
+                });
+                list.appendChild(li);
+            });
+
+            status.textContent = `${cards.length} carte(s) dans la liste.`;
+            status.className = "muted";
+        } catch (e) {
+            status.textContent = `Erreur liste: ${e.message}`;
+            status.className = "error";
+        }
+    }
+
+    // Section 3 : Charger le détail d'une carte
+    async function loadCardDetail(cardId) {
+        const detailDiv = document.getElementById("cardDetail");
+        const section = document.getElementById("addShapeToCardSection");
+        detailDiv.innerHTML = `<p class="muted">Chargement du détail de la carte #${cardId}...</p>`;
+        section.classList.add("hidden");
+
+        try {
+            const res = await fetch(`${BASE}/cards/${cardId}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const card = await res.json();
+
+            currentSelectedCardId = cardId;
+
+            const svg = svgEl("svg");
+            svg.setAttribute("viewBox", "0 0 800 500");
+            svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+            svg.style.width = "100%";
+            svg.style.maxWidth = "800px";
+            svg.style.height = "500px";
+            svg.style.border = "1px solid #ccc";
+            svg.style.borderRadius = "6px";
+            svg.style.background = "#fafafa";
+
+            // Dessiner toutes les formes de la carte
+            if (card.shapes && Array.isArray(card.shapes)) {
+                card.shapes.forEach((shape) => {
+                    drawShape(svg, shape);
+                });
+            }
+
+            const nbShapes = card.shapes ? card.shapes.length : 0;
+
+            detailDiv.innerHTML = `
+        <h3>Carte #${card.id}</h3>
+        <p><strong>Nombre de formes:</strong> ${nbShapes}</p>
+      `;
+            detailDiv.appendChild(svg);
+
+            // Afficher le formulaire d'ajout de forme
+            section.classList.remove("hidden");
+        } catch (e) {
+            detailDiv.innerHTML = `<p class="error">Erreur chargement détail (id=${cardId}): ${e.message}</p>`;
+        }
+    }
+
+    // Section 4 : Créer une nouvelle carte
+    async function handleCreateCard(event) {
+        event.preventDefault();
+
+        const status = document.getElementById("addCardStatus");
+        const btn = document.getElementById("addCardBtn");
+
+        btn.disabled = true;
+        status.textContent = "Création en cours...";
+        status.className = "muted";
+
+        try {
+            const res = await fetch(`${BASE}/cards`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: "{}"
+            });
+
+            if (!res.ok) {
+                let message = `HTTP ${res.status}`;
+                try {
+                    const errorBody = await res.json();
+                    if (errorBody.message) message = errorBody.message;
+                } catch (_ignored) { }
+                throw new Error(message);
+            }
+
+            status.textContent = "Carte créée avec succès!";
+            status.className = "success";
+
+            // Recharger toutes les listes
+            await Promise.all([loadAllCardsWithDrawings(), loadCardList()]);
+        } catch (e) {
+            status.textContent = `Erreur création: ${e.message}`;
+            status.className = "error";
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    // Section 5 : Ajouter une forme à la carte sélectionnée
+    async function handleAddShapeToCard(event) {
+        event.preventDefault();
+
+        if (currentSelectedCardId === null) {
+            alert("Aucune carte sélectionnée");
+            return;
+        }
+
+        const status = document.getElementById("addShapeStatus");
+        const btn = document.getElementById("addShapeToCardBtn");
+        const type = document.getElementById("cardTypeSelect").value;
+
+        const payload = {
+            type,
+            length: Number(document.getElementById("cardLengthInput").value),
+            height: Number(document.getElementById("cardHeightInput").value || 0),
+            color: document.getElementById("cardColorSelect").value
+        };
+
+        btn.disabled = true;
+        status.textContent = "Ajout en cours...";
+        status.className = "muted";
+
+        try {
+            const res = await fetch(`${BASE}/cards/${currentSelectedCardId}/addShape`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                let message = `HTTP ${res.status}`;
+                try {
+                    const errorBody = await res.json();
+                    if (errorBody.message) message = errorBody.message;
+                } catch (_ignored) { }
+                throw new Error(message);
+            }
+
+            status.textContent = `Forme ${type} ajoutée avec succès!`;
+            status.className = "success";
+
+            event.target.reset();
+            document.getElementById("cardTypeSelect").value = SHAPE_TYPES[0];
+            document.getElementById("cardColorSelect").value = SHAPE_COLORS[0];
+            toggleHeightField();
+
+            // Recharger les données
+            await Promise.all([loadAllCardsWithDrawings(), loadCardList(), loadCardDetail(currentSelectedCardId)]);
+        } catch (e) {
+            status.textContent = `Erreur ajout: ${e.message}`;
+            status.className = "error";
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    async function init() {
+        // Initialiser les selects du formulaire d'ajout de forme
+        fillSelect("cardTypeSelect", SHAPE_TYPES);
+        fillSelect("cardColorSelect", SHAPE_COLORS);
+
+        // Ajouter les listeners
+        document.getElementById("cardTypeSelect").addEventListener("change", toggleHeightField);
+        document.getElementById("addCardForm").addEventListener("submit", handleCreateCard);
+        document.getElementById("addShapeToCardForm").addEventListener("submit", handleAddShapeToCard);
+
+        toggleHeightField();
+
+        // Charger les données initiales
+        await Promise.all([loadAllCardsWithDrawings(), loadCardList()]);
+    }
+
+    window.addEventListener("DOMContentLoaded", init);
+</script>
+</body>
+</html>

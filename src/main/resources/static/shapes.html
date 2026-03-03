@@ -166,6 +166,7 @@
 
 <div class="card" style="margin-top: 16px;">
     <h2>Ajouter une shape (`POST /api/shapes`)</h2>
+    <!-- TODO : insérer les types depuis l'API -->
     <form id="addShapeForm">
         <div class="form-grid">
             <div class="field">
@@ -173,6 +174,7 @@
                 <select id="typeSelect" name="type" required></select>
             </div>
 
+            <!-- TODO : insérer les couleurs depuis l'API -->
             <div class="field">
                 <label for="colorSelect">Couleur</label>
                 <select id="colorSelect" name="color" required></select>
@@ -198,6 +200,7 @@
 
 <script>
     const BASE = "http://localhost:8080/api";
+    <!-- TODO : insérer les couleurs et typesdepuis l'API -->
     const SHAPE_TYPES = ["CIRCLE", "RECTANGLE", "SQUARE", "TRIANGLE", "HEXAGON", "PENTAGON"];
     const SHAPE_COLORS = ["RED", "GREEN", "BLUE", "YELLOW", "BLACK", "ORANGE", "PURPLE", "PINK", "BROWN", "GREY"];
     const TYPES_WITHOUT_HEIGHT = new Set(["CIRCLE", "SQUARE", "HEXAGON", "PENTAGON"]);
