@@ -1,6 +1,8 @@
 package fr.serfa.lpdaoo25.bartle.model;
 
+import jakarta.persistence.Entity;
 
+@Entity
 public class Rectangle extends Shape {
 
     private int width;

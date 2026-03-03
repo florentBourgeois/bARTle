@@ -1,5 +1,9 @@
 package fr.serfa.lpdaoo25.bartle.model;
 
+import jakarta.persistence.Entity;
+
+@Entity
+
 public class Pentagon extends Shape {
     private int cote;
 

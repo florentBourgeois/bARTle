@@ -1,10 +1,15 @@
 package fr.serfa.lpdaoo25.bartle.model;
 
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+
+@Entity
 public abstract class Shape {
 
-    private static Long idGenerator = 0L;
-    protected Long id = idGenerator++;
+    @Id @GeneratedValue
+    protected Long id;
     private int x=  (int) (Math.random() * 500);
     private int y=  (int) (Math.random() * 500);
 
