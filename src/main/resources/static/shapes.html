@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Shapes - bARTle</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+            color: #222;
+        }
+
+        h1 {
+            margin-bottom: 16px;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 16px;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        #board {
+            width: 100%;
+            max-width: 800px;
+            height: 500px;
+            border: 1px solid #ccc;
+            background: #fafafa;
+            border-radius: 6px;
+        }
+
+        .shape-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+
+        .shape-list li {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+
+        .shape-list li:last-child {
+            border-bottom: none;
+        }
+
+        .shape-list li:hover {
+            background: #f0f7ff;
+        }
+
+        .shape-list li.active {
+            background: #d9ecff;
+            font-weight: bold;
+        }
+
+        .muted {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .error {
+            color: #b00020;
+            font-weight: bold;
+        }
+
+        .success {
+            color: #087f23;
+            font-weight: bold;
+        }
+
+        .details pre {
+            background: #f8f8f8;
+            border: 1px solid #e5e5e5;
+            border-radius: 6px;
+            padding: 10px;
+            overflow: auto;
+            font-size: 13px;
+        }
+
+        .legend {
+            margin-top: 8px;
+            font-size: 13px;
+            color: #555;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(180px, 1fr));
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .field input,
+        .field select,
+        .field button {
+            padding: 8px 10px;
+            border: 1px solid #c9c9c9;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .field button {
+            cursor: pointer;
+            background: #1976d2;
+            color: #fff;
+            border: none;
+        }
+
+        .field button:hover {
+            background: #1565c0;
+        }
+
+        .full-row {
+            grid-column: 1 / -1;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<h1>Gestion des shapes</h1>
+
+<div class="layout">
+    <div class="card">
+        <h2>Dessin global (`/api/shapes/detailed`)</h2>
+        <svg id="board" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet"></svg>
+        <div class="legend">Toutes les formes sont affichees sur ce dessin unique.</div>
+        <p id="drawStatus" class="muted">Chargement du dessin...</p>
+    </div>
+
+    <div class="card">
+        <h2>Liste des shapes (`/api/shapes`)</h2>
+        <ul id="shapeList" class="shape-list"></ul>
+        <p id="listStatus" class="muted">Chargement de la liste...</p>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 16px;">
+    <h2>Detail de la shape selectionnee (`/api/shapes/{id}`)</h2>
+    <div id="details" class="details">
+        <p class="muted">Cliquez sur une shape dans la liste pour afficher ses details.</p>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 16px;">
+    <h2>Ajouter une shape (`POST /api/shapes`)</h2>
+    <form id="addShapeForm">
+        <div class="form-grid">
+            <div class="field">
+                <label for="typeSelect">Type</label>
+                <select id="typeSelect" name="type" required></select>
+            </div>
+
+            <div class="field">
+                <label for="colorSelect">Couleur</label>
+                <select id="colorSelect" name="color" required></select>
+            </div>
+
+            <div class="field">
+                <label for="lengthInput">Longueur</label>
+                <input id="lengthInput" name="length" type="number" min="1" value="1" required />
+            </div>
+
+            <div class="field" id="heightField">
+                <label for="heightInput">Hauteur</label>
+                <input id="heightInput" name="height" type="number" min="0" value="0" required />
+            </div>
+
+            <div class="field full-row">
+                <button id="submitBtn" type="submit">Ajouter la shape</button>
+            </div>
+        </div>
+    </form>
+    <p id="formStatus" class="muted">Remplissez le formulaire pour ajouter une forme.</p>
+</div>
+
+<script>
+    const BASE = "http://localhost:8080/api";
+    const SHAPE_TYPES = ["CIRCLE", "RECTANGLE", "SQUARE", "TRIANGLE", "HEXAGON", "PENTAGON"];
+    const SHAPE_COLORS = ["RED", "GREEN", "BLUE", "YELLOW", "BLACK", "ORANGE", "PURPLE", "PINK", "BROWN", "GREY"];
+    const TYPES_WITHOUT_HEIGHT = new Set(["CIRCLE", "SQUARE", "HEXAGON", "PENTAGON"]);
+
+    function mapColor(enumColor) {
+        const map = {
+            RED: "#e53935",
+            GREEN: "#43a047",
+            BLUE: "#1e88e5",
+            YELLOW: "#fdd835",
+            BLACK: "#000000",
+            ORANGE: "#fb8c00",
+            PURPLE: "#8e24aa",
+            PINK: "#d81b60",
+            BROWN: "#6d4c41",
+            GREY: "#757575"
+        };
+        return map[enumColor] || "#607d8b";
+    }
+
+    function svgEl(name) {
+        return document.createElementNS("http://www.w3.org/2000/svg", name);
+    }
+
+    function drawShape(svg, shape) {
+        const color = mapColor(shape.color);
+        const x = Number(shape.x ?? 50);
+        const y = Number(shape.y ?? 50);
+        const w = Number(shape.width ?? 20);
+        const h = Number(shape.height ?? 20);
+
+        let el = null;
+
+        switch (shape.type) {
+            case "CIRCLE": {
+                const r = Number(shape.radius ?? Math.max(5, w / 2));
+                el = svgEl("circle");
+                el.setAttribute("cx", String(x));
+                el.setAttribute("cy", String(y));
+                el.setAttribute("r", String(r));
+                break;
+            }
+            case "RECTANGLE":
+            case "SQUARE": {
+                el = svgEl("rect");
+                el.setAttribute("x", String(x));
+                el.setAttribute("y", String(y));
+                el.setAttribute("width", String(w));
+                el.setAttribute("height", String(h));
+                break;
+            }
+            case "TRIANGLE": {
+                const base = Number(shape.base ?? w);
+                const p1 = `${x},${y}`;
+                const p2 = `${x - base / 2},${y + h}`;
+                const p3 = `${x + base / 2},${y + h}`;
+                el = svgEl("polygon");
+                el.setAttribute("points", `${p1} ${p2} ${p3}`);
+                break;
+            }
+            case "HEXAGON": {
+                const r = Math.max(6, w / 2);
+                const pts = [];
+                for (let i = 0; i < 6; i++) {
+                    const a = (Math.PI / 3) * i;
+                    pts.push(`${x + r * Math.cos(a)},${y + r * Math.sin(a)}`);
+                }
+                el = svgEl("polygon");
+                el.setAttribute("points", pts.join(" "));
+                break;
+            }
+            case "PENTAGON": {
+                const r = Math.max(6, w / 2);
+                const pts = [];
+                for (let i = 0; i < 5; i++) {
+                    const a = (Math.PI * 2 / 5) * i - Math.PI / 2;
+                    pts.push(`${x + r * Math.cos(a)},${y + r * Math.sin(a)}`);
+                }
+                el = svgEl("polygon");
+                el.setAttribute("points", pts.join(" "));
+                break;
+            }
+            default:
+                return;
+        }
+
+        el.setAttribute("fill", color);
+        el.setAttribute("stroke", "#333");
+        el.setAttribute("stroke-width", "1.5");
+        svg.appendChild(el);
+    }
+
+    function fillSelect(selectId, values) {
+        const select = document.getElementById(selectId);
+        select.innerHTML = "";
+        values.forEach((value) => {
+            const option = document.createElement("option");
+            option.value = value;
+            option.textContent = value;
+            select.appendChild(option);
+        });
+    }
+
+    function toggleHeightField() {
+        const type = document.getElementById("typeSelect").value;
+        const heightField = document.getElementById("heightField");
+        const heightInput = document.getElementById("heightInput");
+        const hide = TYPES_WITHOUT_HEIGHT.has(type);
+        heightField.classList.toggle("hidden", hide);
+        heightInput.required = !hide;
+        if (hide) {
+            heightInput.value = "0";
+        }
+    }
+
+    async function loadDetailedDrawing() {
+        const status = document.getElementById("drawStatus");
+        const svg = document.getElementById("board");
+        svg.innerHTML = "";
+
+        try {
+            const res = await fetch(`${BASE}/shapes/detailed`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const shapes = await res.json();
+
+            if (!Array.isArray(shapes)) {
+                throw new Error("La reponse de /shapes/detailed n'est pas une liste.");
+            }
+
+            shapes.forEach((s) => drawShape(svg, s));
+            status.textContent = `${shapes.length} forme(s) dessinee(s).`;
+            status.className = "muted";
+        } catch (e) {
+            status.textContent = `Erreur dessin: ${e.message}`;
+            status.className = "error";
+        }
+    }
+
+    async function loadShapeList() {
+        const list = document.getElementById("shapeList");
+        const status = document.getElementById("listStatus");
+        list.innerHTML = "";
+
+        try {
+            const res = await fetch(`${BASE}/shapes`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const shapes = await res.json();
+
+            if (!Array.isArray(shapes)) {
+                throw new Error("La reponse de /shapes n'est pas une liste.");
+            }
+
+            shapes.forEach((shape, index) => {
+                const li = document.createElement("li");
+                const id = shape.id ?? index;
+                li.dataset.id = String(id);
+                li.innerHTML = `<span>id: ${id}</span><span>type: ${shape.type ?? "UNKNOWN"}</span>`;
+                li.addEventListener("click", async () => {
+                    document.querySelectorAll("#shapeList li").forEach((el) => el.classList.remove("active"));
+                    li.classList.add("active");
+                    await loadShapeDetail(id);
+                });
+                list.appendChild(li);
+            });
+
+            status.textContent = `${shapes.length} shape(s) dans la liste.`;
+            status.className = "muted";
+        } catch (e) {
+            status.textContent = `Erreur liste: ${e.message}`;
+            status.className = "error";
+        }
+    }
+
+    async function loadShapeDetail(id) {
+        const details = document.getElementById("details");
+        details.innerHTML = `<p class="muted">Chargement du detail pour id=${id}...</p>`;
+
+        try {
+            const res = await fetch(`${BASE}/shapes/${id}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const shape = await res.json();
+
+            details.innerHTML = `
+        <p><strong>ID:</strong> ${id}</p>
+        <p><strong>Type:</strong> ${shape.type ?? "UNKNOWN"}</p>
+        <p><strong>Couleur:</strong> ${shape.color ?? "UNKNOWN"}</p>
+        <p><strong>Position:</strong> x=${shape.x ?? "?"}, y=${shape.y ?? "?"}</p>
+        <p><strong>Aire:</strong> ${shape.area ?? "?"}</p>
+        <p><strong>Perimetre:</strong> ${shape.perimeter ?? "?"}</p>
+        <pre>${JSON.stringify(shape, null, 2)}</pre>
+      `;
+        } catch (e) {
+            details.innerHTML = `<p class="error">Erreur detail (id=${id}): ${e.message}</p>`;
+        }
+    }
+
+    async function handleCreateShape(event) {
+        event.preventDefault();
+
+        const formStatus = document.getElementById("formStatus");
+        const submitBtn = document.getElementById("submitBtn");
+        const type = document.getElementById("typeSelect").value;
+
+        const payload = {
+            type,
+            length: Number(document.getElementById("lengthInput").value),
+            height: Number(document.getElementById("heightInput").value || 0),
+            color: document.getElementById("colorSelect").value
+        };
+
+        submitBtn.disabled = true;
+        formStatus.textContent = "Envoi en cours...";
+        formStatus.className = "muted";
+
+        try {
+            const res = await fetch(`${BASE}/shapes`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                let message = `HTTP ${res.status}`;
+                try {
+                    const errorBody = await res.json();
+                    if (errorBody.message) {
+                        message = errorBody.message;
+                    }
+                } catch (_ignored) {
+                }
+                throw new Error(message);
+            }
+
+            formStatus.textContent = `Shape ${type} ajoutee avec succes.`;
+            formStatus.className = "success";
+
+            event.target.reset();
+            document.getElementById("typeSelect").value = SHAPE_TYPES[0];
+            document.getElementById("colorSelect").value = SHAPE_COLORS[0];
+            toggleHeightField();
+
+            await Promise.all([loadShapeList(), loadDetailedDrawing()]);
+        } catch (e) {
+            formStatus.textContent = `Erreur ajout: ${e.message}`;
+            formStatus.className = "error";
+        } finally {
+            submitBtn.disabled = false;
+        }
+    }
+
+    async function init() {
+        fillSelect("typeSelect", SHAPE_TYPES);
+        fillSelect("colorSelect", SHAPE_COLORS);
+        document.getElementById("typeSelect").addEventListener("change", toggleHeightField);
+        document.getElementById("addShapeForm").addEventListener("submit", handleCreateShape);
+        toggleHeightField();
+        await Promise.all([loadDetailedDrawing(), loadShapeList()]);
+    }
+
+    window.addEventListener("DOMContentLoaded", init);
+</script>
+</body>
+</html>

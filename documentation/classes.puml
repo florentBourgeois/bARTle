@@ -1,0 +1,69 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+class Card {
+    Card(Set<Shape>)
+    getShapes() : Set<Shape>
+    contains(Shape) : boolean
+
+}
+
+abstract class Shape {
+    #  SHAPE_TYPE : String
+    - color : String
+    - x : int
+    - y : int
+
+    +getColor() : String
+    +getType() : String
+    +getX() : int
+    +getY() : int
+
+    +{abstract} getPerimeter() : int
+    +{abstract} getArea() : int
+}
+
+class Circle{
+    - radius : int
+
+     +getRadius() :  int
+     +getPerimeter() :  int
+     +getArea() : int
+
+}
+
+class Rectangle {
+    - length : int}
+    - width : int
+
+     +getLength() :  int
+     +getWidth() :  int
+     +getPerimeter() :  int
+     +getArea() : int
+}
+
+class Triangle{
+     -base : int
+     -height : int
+
+        +getBase() :  int
+        +getHeight() :  int
+        +getPerimeter() :  int
+        +getArea() : int
+}
+
+class Square
+class Pentagon
+class Hexagon
+
+Card -> "*" Shape : shapes
+
+Shape <|-- Circle
+Shape <|-- Rectangle
+Shape <|-- Triangle
+Shape <|-- Square
+Shape <|-- Pentagon
+Shape <|-- Hexagon
+
+
+@enduml

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>bARTle - Shapes Display</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .shape-card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            min-width: 300px;
+        }
+
+        .shape-card h2 {
+            margin-top: 0;
+            color: #555;
+            text-align: center;
+        }
+
+        .shape-canvas {
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            background-color: #fafafa;
+            margin: 10px 0;
+        }
+
+        .shape-info {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .shape-info p {
+            margin: 5px 0;
+        }
+
+        .loading {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+
+        .error {
+            color: #d32f2f;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .card-section {
+            margin-top: 40px;
+            background-color: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-section h2 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .card-stats {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .card-stats p {
+            margin: 8px 0;
+            font-size: 16px;
+            font-weight: bold;
+            color: #1976d2;
+        }
+
+        .card-canvas-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .card-canvas {
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            background-color: #fafafa;
+        }
+    </style>
+</head>
+<body>
+    <h1>bARTle - Affichage des Formes hors bdd</h1>
+    <a href="http://localhost:8080/shapes.html">visitez les formes de la bdd</a>
+    <a href="http://localhost:8080/cards.html">visitez les cartes de la bdd</a>
+
+    <div class="container">
+        <div class="shape-card">
+            <h2>Cercle</h2>
+            <svg id="circle-canvas" class="shape-canvas" width="300" height="300"></svg>
+            <div id="circle-info" class="shape-info loading">Chargement...</div>
+        </div>
+
+        <div class="shape-card">
+            <h2>Rectangle</h2>
+            <svg id="rectangle-canvas" class="shape-canvas" width="300" height="300"></svg>
+            <div id="rectangle-info" class="shape-info loading">Chargement...</div>
+        </div>
+    </div>
+
+    <div class="card-section">
+        <h2>Carte avec 15 Formes</h2>
+        <div id="card-stats" class="card-stats loading">Chargement de la carte...</div>
+        <div class="card-canvas-container">
+            <svg id="card-canvas" class="card-canvas" width="600" height="600"></svg>
+        </div>
+    </div>
+
+    <script>
+        // Fonction pour convertir les couleurs de l'enum Java en couleurs CSS
+        function getColor(colorName) {
+            const colorMap = {
+                'RED': '#FF0000',
+                'GREEN': '#00FF00',
+                'BLUE': '#0000FF',
+                'YELLOW': '#FFFF00',
+                'BLACK': '#000000',
+                'ORANGE': '#FFA500',
+                'PURPLE': '#800080',
+                'PINK': '#FFC0CB',
+                'BROWN': '#A52A2A',
+                'GREY': '#808080'
+            };
+            return colorMap[colorName] || '#000000';
+        }
+
+        // Fonction pour afficher le cercle
+        async function displayCircle() {
+            try {
+                const response = await fetch('http://localhost:8080/noBDD/circle');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const circle = await response.json();
+
+                const svg = document.getElementById('circle-canvas');
+                const color = getColor(circle.color);
+
+                // Calculer la position centrée dans le canvas
+                const canvasWidth = 300;
+                const canvasHeight = 300;
+                const centerX = canvasWidth / 2;
+                const centerY = canvasHeight / 2;
+
+                // Dessiner le cercle
+                const circleElement = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circleElement.setAttribute('cx', centerX);
+                circleElement.setAttribute('cy', centerY);
+                circleElement.setAttribute('r', circle.radius);
+                circleElement.setAttribute('fill', color);
+                circleElement.setAttribute('stroke', '#333');
+                circleElement.setAttribute('stroke-width', '2');
+
+                svg.appendChild(circleElement);
+
+                // Afficher les informations
+                const infoDiv = document.getElementById('circle-info');
+                infoDiv.className = 'shape-info';
+                infoDiv.innerHTML = `
+                    <p><strong>Type:</strong> ${circle.type}</p>
+                    <p><strong>Couleur:</strong> ${circle.color}</p>
+                    <p><strong>Position X:</strong> ${circle.x}px</p>
+                    <p><strong>Position Y:</strong> ${circle.y}px</p>
+                    <p><strong>Rayon:</strong> ${circle.radius}px</p>
+                    <p><strong>Largeur:</strong> ${circle.width}px</p>
+                    <p><strong>Hauteur:</strong> ${circle.height}px</p>
+                    <p><strong>Périmètre:</strong> ${circle.perimeter}px</p>
+                    <p><strong>Aire:</strong> ${circle.area}px²</p>
+                `;
+            } catch (error) {
+                console.error('Erreur lors du chargement du cercle:', error);
+                const infoDiv = document.getElementById('circle-info');
+                infoDiv.className = 'shape-info error';
+                infoDiv.innerHTML = `Erreur: ${error.message}`;
+            }
+        }
+
+        // Fonction pour afficher le rectangle
+        async function displayRectangle() {
+            try {
+                const response = await fetch('http://localhost:8080/noBDD/rectangle');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const rectangle = await response.json();
+
+                const svg = document.getElementById('rectangle-canvas');
+                const color = getColor(rectangle.color);
+
+                // Calculer la position centrée dans le canvas
+                const canvasWidth = 300;
+                const canvasHeight = 300;
+                const x = (canvasWidth - rectangle.width) / 2;
+                const y = (canvasHeight - rectangle.height) / 2;
+
+                // Dessiner le rectangle
+                const rectElement = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rectElement.setAttribute('x', x);
+                rectElement.setAttribute('y', y);
+                rectElement.setAttribute('width', rectangle.width);
+                rectElement.setAttribute('height', rectangle.height);
+                rectElement.setAttribute('fill', color);
+                rectElement.setAttribute('stroke', '#333');
+                rectElement.setAttribute('stroke-width', '2');
+
+                svg.appendChild(rectElement);
+
+                // Afficher les informations
+                const infoDiv = document.getElementById('rectangle-info');
+                infoDiv.className = 'shape-info';
+                infoDiv.innerHTML = `
+                    <p><strong>Type:</strong> ${rectangle.type}</p>
+                    <p><strong>Couleur:</strong> ${rectangle.color}</p>
+                    <p><strong>Position X:</strong> ${rectangle.x}px</p>
+                    <p><strong>Position Y:</strong> ${rectangle.y}px</p>
+                    <p><strong>Largeur:</strong> ${rectangle.width}px</p>
+                    <p><strong>Hauteur:</strong> ${rectangle.height}px</p>
+                    <p><strong>Périmètre:</strong> ${rectangle.perimeter}px</p>
+                    <p><strong>Aire:</strong> ${rectangle.area}px²</p>
+                `;
+            } catch (error) {
+                console.error('Erreur lors du chargement du rectangle:', error);
+                const infoDiv = document.getElementById('rectangle-info');
+                infoDiv.className = 'shape-info error';
+                infoDiv.innerHTML = `Erreur: ${error.message}`;
+            }
+        }
+
+        // Fonction pour dessiner une forme dans un SVG aux coordonnées spécifiées
+        function drawShape(svg, shape) {
+            const color = getColor(shape.color);
+            const x = shape.x;
+            const y = shape.y;
+
+            switch(shape.type) {
+                case 'CIRCLE':
+                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    circle.setAttribute('cx', x);
+                    circle.setAttribute('cy', y);
+                    circle.setAttribute('r', shape.radius);
+                    circle.setAttribute('fill', color);
+                    circle.setAttribute('stroke', '#333');
+                    circle.setAttribute('stroke-width', '2');
+                    svg.appendChild(circle);
+                    break;
+
+                case 'RECTANGLE':
+                    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    rect.setAttribute('x', x);
+                    rect.setAttribute('y', y);
+                    rect.setAttribute('width', shape.width);
+                    rect.setAttribute('height', shape.height);
+                    rect.setAttribute('fill', color);
+                    rect.setAttribute('stroke', '#333');
+                    rect.setAttribute('stroke-width', '2');
+                    svg.appendChild(rect);
+                    break;
+
+                case 'SQUARE':
+                    const square = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    square.setAttribute('x', x);
+                    square.setAttribute('y', y);
+                    square.setAttribute('width', shape.width);
+                    square.setAttribute('height', shape.height);
+                    square.setAttribute('fill', color);
+                    square.setAttribute('stroke', '#333');
+                    square.setAttribute('stroke-width', '2');
+                    svg.appendChild(square);
+                    break;
+
+                case 'TRIANGLE':
+                    const triangle = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                    const base = shape.base || shape.width;
+                    const height = shape.height;
+                    // Triangle pointant vers le haut avec sommet en (x, y)
+                    const points = `${x},${y} ${x - base/2},${y + height} ${x + base/2},${y + height}`;
+                    triangle.setAttribute('points', points);
+                    triangle.setAttribute('fill', color);
+                    triangle.setAttribute('stroke', '#333');
+                    triangle.setAttribute('stroke-width', '2');
+                    svg.appendChild(triangle);
+                    break;
+
+                case 'HEXAGON':
+                    const hexagon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                    const hexRadius = shape.width / 2;
+                    let hexPoints = '';
+                    for (let i = 0; i < 6; i++) {
+                        const angle = (Math.PI / 3) * i;
+                        const px = x + hexRadius * Math.cos(angle);
+                        const py = y + hexRadius * Math.sin(angle);
+                        hexPoints += `${px},${py} `;
+                    }
+                    hexagon.setAttribute('points', hexPoints.trim());
+                    hexagon.setAttribute('fill', color);
+                    hexagon.setAttribute('stroke', '#333');
+                    hexagon.setAttribute('stroke-width', '2');
+                    svg.appendChild(hexagon);
+                    break;
+
+                case 'PENTAGON':
+                    const pentagon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                    const pentRadius = shape.width / 2;
+                    let pentPoints = '';
+                    for (let i = 0; i < 5; i++) {
+                        const angle = (Math.PI * 2 / 5) * i - Math.PI / 2;
+                        const px = x + pentRadius * Math.cos(angle);
+                        const py = y + pentRadius * Math.sin(angle);
+                        pentPoints += `${px},${py} `;
+                    }
+                    pentagon.setAttribute('points', pentPoints.trim());
+                    pentagon.setAttribute('fill', color);
+                    pentagon.setAttribute('stroke', '#333');
+                    pentagon.setAttribute('stroke-width', '2');
+                    svg.appendChild(pentagon);
+                    break;
+            }
+        }
+
+        // Fonction pour afficher la carte
+        async function displayCard() {
+            try {
+                const response = await fetch('http://localhost:8080/noBDD/card/15');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const card = await response.json();
+
+                const shapes = card.shapes || [];
+
+                // Afficher les statistiques
+                const statsDiv = document.getElementById('card-stats');
+                statsDiv.className = 'card-stats';
+                statsDiv.innerHTML = `
+                    <p>Nombre de formes: ${shapes.length}</p>
+                `;
+
+                // Dessiner toutes les formes sur le même canvas
+                const svg = document.getElementById('card-canvas');
+                svg.innerHTML = ''; // Vider le canvas
+
+                shapes.forEach((shape) => {
+                    drawShape(svg, shape);
+                });
+
+            } catch (error) {
+                console.error('Erreur lors du chargement de la carte:', error);
+                const statsDiv = document.getElementById('card-stats');
+                statsDiv.className = 'card-stats error';
+                statsDiv.innerHTML = `Erreur: ${error.message}`;
+            }
+        }
+
+        // Charger les formes au chargement de la page
+        window.addEventListener('DOMContentLoaded', () => {
+            displayCircle();
+            displayRectangle();
+            displayCard();
+        });
+    </script>
+</body>
+</html>
+
