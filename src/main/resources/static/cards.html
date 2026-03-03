@@ -316,6 +316,27 @@
     </div>
 </div>
 
+<div class="card section-divider">
+    <h2>Jeu (GET `/api/cards/play`)</h2>
+    <p id="playStatus" class="muted">Chargement de la partie...</p>
+
+    <div class="layout" style="margin-top: 12px;">
+        <div class="card">
+            <h3>Carte C1</h3>
+            <svg id="playBoardC1" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet" style="width:100%;max-width:800px;height:400px;border:1px solid #ccc;background:#fafafa;border-radius:6px;"></svg>
+            <p id="playC1Info" class="muted"></p>
+        </div>
+
+        <div class="card">
+            <h3>Carte C2</h3>
+            <svg id="playBoardC2" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet" style="width:100%;max-width:800px;height:400px;border:1px solid #ccc;background:#fafafa;border-radius:6px;"></svg>
+            <p id="playC2Info" class="muted"></p>
+        </div>
+    </div>
+
+    <p id="playQuestion" style="margin-top: 12px; font-size: 18px; font-weight: 700;"></p>
+</div>
+
 <script>
     const BASE = "http://localhost:8080/api";
     const SHAPE_TYPES = ["CIRCLE", "RECTANGLE", "SQUARE", "TRIANGLE", "HEXAGON", "PENTAGON"];
@@ -323,7 +344,6 @@
     const TYPES_WITHOUT_HEIGHT = new Set(["CIRCLE", "SQUARE", "HEXAGON", "PENTAGON"]);
 
     let currentSelectedCardId = null;
-we
 
     function mapColor(enumColor) {
         const map = {
@@ -671,6 +691,56 @@ we
         }
     }
 
+    function cardShapesCount(card) {
+        return Array.isArray(card?.shapes) ? card.shapes.length : 0;
+    }
+
+    function renderCardOnBoard(svgId, card) {
+        const svg = document.getElementById(svgId);
+        if (!svg) return;
+        svg.innerHTML = "";
+        if (!card || !Array.isArray(card.shapes)) return;
+        card.shapes.forEach((shape) => drawShape(svg, shape));
+    }
+
+    async function loadPlayGame() {
+        const status = document.getElementById("playStatus");
+        const question = document.getElementById("playQuestion");
+        const c1Info = document.getElementById("playC1Info");
+        const c2Info = document.getElementById("playC2Info");
+
+        try {
+            status.textContent = "Chargement de la partie...";
+            status.className = "muted";
+
+            const res = await fetch(`${BASE}/cards/play`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const play = await res.json();
+
+            if (!play || !play.c1 || !play.c2) {
+                throw new Error("Reponse /cards/play invalide.");
+            }
+
+            renderCardOnBoard("playBoardC1", play.c1);
+            renderCardOnBoard("playBoardC2", play.c2);
+
+            c1Info.textContent = `Carte #${play.c1.id} - ${cardShapesCount(play.c1)} forme(s)`;
+            c2Info.textContent = `Carte #${play.c2.id} - ${cardShapesCount(play.c2)} forme(s)`;
+            question.textContent = `Quelle carte contient le plus de ${play.typeToCount} ?`;
+
+            status.textContent = "Partie chargee.";
+            status.className = "success";
+        } catch (e) {
+            status.textContent = `Erreur chargement partie: ${e.message}`;
+            status.className = "error";
+            question.textContent = "";
+            c1Info.textContent = "";
+            c2Info.textContent = "";
+            renderCardOnBoard("playBoardC1", null);
+            renderCardOnBoard("playBoardC2", null);
+        }
+    }
+
     async function init() {
         // Initialiser les selects du formulaire d'ajout de forme
         fillSelect("cardTypeSelect", SHAPE_TYPES);
@@ -684,7 +754,7 @@ we
         toggleHeightField();
 
         // Charger les données initiales
-        await Promise.all([loadAllCardsWithDrawings(), loadCardList()]);
+        await Promise.all([loadAllCardsWithDrawings(), loadCardList(), loadPlayGame()]);
     }
 
     window.addEventListener("DOMContentLoaded", init);
