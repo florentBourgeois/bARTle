@@ -1,11 +1,10 @@
 package fr.serfa.lpdaoo25.bartle.model;
 
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 
 @Entity
+//@Inheritance(strategy = InheritanceType.JOINED)
 public abstract class Shape {
 
     @Id @GeneratedValue

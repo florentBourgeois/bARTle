@@ -126,6 +126,29 @@
             font-weight: bold;
         }
 
+        .card-list li > .content {
+            flex: 1;
+            display: flex;
+            justify-content: space-between;
+            cursor: pointer;
+        }
+
+        .card-list li > .delete-btn {
+            background: #d32f2f;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 10px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 8px;
+            flex-shrink: 0;
+        }
+
+        .card-list li > .delete-btn:hover {
+            background: #b71c1c;
+        }
+
         .muted {
             color: #666;
             font-size: 14px;
@@ -530,12 +553,29 @@
             cards.forEach((card) => {
                 const li = document.createElement("li");
                 li.dataset.id = String(card.id);
-                li.innerHTML = `<span>Carte #${card.id}</span><span>${card.nbrShapes} formes</span>`;
-                li.addEventListener("click", async () => {
+                li.style.display = "flex";
+                li.style.alignItems = "center";
+
+                const content = document.createElement("div");
+                content.className = "content";
+                content.innerHTML = `<span>Carte #${card.id}</span><span>${card.nbrShapes} formes</span>`;
+                content.addEventListener("click", async () => {
                     document.querySelectorAll("#cardList li").forEach((el) => el.classList.remove("active"));
                     li.classList.add("active");
                     await loadCardDetail(card.id);
                 });
+
+                const deleteBtn = document.createElement("button");
+                deleteBtn.className = "delete-btn";
+                deleteBtn.textContent = "🗑️";
+                deleteBtn.type = "button";
+                deleteBtn.addEventListener("click", async (e) => {
+                    e.stopPropagation();
+                    await handleDeleteCard(card.id);
+                });
+
+                li.appendChild(content);
+                li.appendChild(deleteBtn);
                 list.appendChild(li);
             });
 
@@ -693,6 +733,39 @@
 
     function cardShapesCount(card) {
         return Array.isArray(card?.shapes) ? card.shapes.length : 0;
+    }
+
+    async function handleDeleteCard(cardId) {
+        if (!confirm(`Êtes-vous sûr de vouloir supprimer la carte #${cardId} ?`)) {
+            return;
+        }
+
+        try {
+            const res = await fetch(`${BASE}/cards/${cardId}`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" }
+            });
+
+            if (!res.ok) {
+                let message = `HTTP ${res.status}`;
+                try {
+                    const errorBody = await res.json();
+                    if (errorBody.message) message = errorBody.message;
+                } catch (_ignored) { }
+                throw new Error(message);
+            }
+
+            // Recharger les données après suppression
+            if (currentSelectedCardId === cardId) {
+                currentSelectedCardId = null;
+                document.getElementById("cardDetail").innerHTML = `<p class="muted">Cliquez sur une carte dans la liste pour afficher ses détails.</p>`;
+                document.getElementById("addShapeToCardSection").classList.add("hidden");
+            }
+
+            await Promise.all([loadAllCardsWithDrawings(), loadCardList()]);
+        } catch (e) {
+            alert(`Erreur suppression carte #${cardId}: ${e.message}`);
+        }
     }
 
     function renderCardOnBoard(svgId, card) {

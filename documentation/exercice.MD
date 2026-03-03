@@ -21,7 +21,7 @@ c) lors du clic sur une forme de la liste un appel à http://localhost:8080/api/
 
 d) un formulaire permet de créer une nouvelle forme. En envoyant une requete POST à http://localhost:8080/nobdd/shapes avec les données de la forme à créer. La forme créée est ajoutée à la bdd et renvoyée dans la réponse.
 
-3cards.html : A VENIR
+3. cards.html :
    
 a) un appel à http://localhost:8080/api/cards/detailed renvoie la liste des cartes de la bdd pour un affichage graphique (avec tous les détails) -> [{id:number, shapes:[]},...] 
    
@@ -32,3 +32,7 @@ c) lors du clic sur une carte de la liste un appel à http://localhost:8080/api/
 d) un formulaire permet d'ajouter une nouvelle carte (pas d'envoi de donnée) POST http://localhost:8080/api/cards
 
 e) un formulaire permet d'ajouter une nouvelle forme à une card spécifiée par son id : POST  http://localhost:8080/api/cards/idShape/addShape
+
+f) un bouton permet de supprimer la carte présente sur la liste. Cette suppression suprime les formes de la carte. : DELETE http://localhost:8080/api/cards/idShape
+
+4. jeu.html : A VENIR
