@@ -247,7 +247,7 @@
 
 <!-- Section 1 et 2 : Affichage des cartes -->
 <div class="cards-overview">
-    <h2>Aperçu de toutes les cartes</h2>
+    <h2>Aperçu de toutes les cartes (`GET /cards/detailed`)</h2>
     <p class="muted">Chaque carte affiche ses formes graphiquement</p>
     <div id="cardsContainer" class="card-grid"></div>
     <p id="cardsStatus" class="muted">Chargement des cartes...</p>
@@ -256,14 +256,14 @@
 <div class="layout">
     <!-- Section 2 : Liste des cartes résumées -->
     <div class="card">
-        <h2>Liste des cartes (`/api/cards`)</h2>
+        <h2>Liste des cartes (GET `/api/cards`)</h2>
         <ul id="cardList" class="card-list"></ul>
         <p id="listStatus" class="muted">Chargement de la liste...</p>
     </div>
 
     <!-- Section 4 : Formulaire d'ajout de carte -->
     <div class="card">
-        <h2>Ajouter une carte</h2>
+        <h2>Ajouter une carte (POST `/api/cards`)</h2>
         <form id="addCardForm">
             <div class="form-grid">
                 <div class="field full-row">
@@ -277,14 +277,14 @@
 
 <!-- Section 3 : Détail de la carte sélectionnée -->
 <div class="card section-divider">
-    <h2>Détail de la carte sélectionnée (`/api/cards/{id}`)</h2>
+    <h2>Détail de la carte sélectionnée (GET `/api/cards/{id}`)</h2>
     <div id="cardDetail" class="details">
         <p class="muted">Cliquez sur une carte dans la liste pour afficher ses détails.</p>
     </div>
 
     <!-- Section 5 : Formulaire d'ajout de forme dans la carte -->
     <div id="addShapeToCardSection" class="hidden">
-        <h3>Ajouter une forme dans cette carte</h3>
+        <h3>Ajouter une forme dans cette carte (POST `/api/cards/id/addShape`)</h3>
         <form id="addShapeToCardForm">
             <div class="form-grid">
                 <div class="field">
@@ -323,6 +323,7 @@
     const TYPES_WITHOUT_HEIGHT = new Set(["CIRCLE", "SQUARE", "HEXAGON", "PENTAGON"]);
 
     let currentSelectedCardId = null;
+we
 
     function mapColor(enumColor) {
         const map = {
